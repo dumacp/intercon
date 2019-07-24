@@ -94,6 +94,7 @@ func init() {
 }
 func main() {
 	flag.Parse()
+	log.Printf("remoteAddr: %s; localAddr: %s; serverAddr: %s", remoteAddr, localAddr, serverAddr)
 
 	config := &ssh.ClientConfig{}
 	config.User = remoteUser
