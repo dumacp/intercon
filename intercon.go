@@ -130,7 +130,7 @@ func main() {
 	}
 	defer remote.Close()
 
-	listen, err := client.Listen("tcp", localAddr)
+	listen, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		log.Fatalf("listen in local Addr ERROR: %v", err)
 	}
