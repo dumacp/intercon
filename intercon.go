@@ -51,6 +51,9 @@ func callHostKey(keyLoad []byte) func(string, net.Addr, ssh.PublicKey) error {
 		}
 	}
 	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		log.Printf("remote host: %s", hostname)
+		log.Printf("remote address: %s", remote)
+		log.Printf("remote puyblic key: %s", key)
 		return nil
 	}
 }
