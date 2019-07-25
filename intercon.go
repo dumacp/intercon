@@ -166,6 +166,7 @@ func main() {
 		if err := <-errch; err != nil {
 			log.Printf("forward ERROR: %v", err)
 			localAccept.Close()
+			remote.Close()
 		}
 		log.Println("Done!!!")
 	}
