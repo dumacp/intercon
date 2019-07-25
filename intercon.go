@@ -146,5 +146,6 @@ func main() {
 			log.Fatalf("forward ERROR: %v", err)
 		}
 		log.Println("Done!!!")
+		localAccept.Close()
 	}
 }
