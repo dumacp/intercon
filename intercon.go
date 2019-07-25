@@ -170,8 +170,8 @@ func main() {
 			if err != nil {
 				log.Fatalf("forward ERROR: %v", err)
 			}
+			localAccept.Close()
 		}
 		log.Println("Done!!!")
-		localAccept.Close()
 	}
 }
