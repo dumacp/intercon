@@ -59,7 +59,7 @@ func callHostKey(keyLoad []byte) func(string, net.Addr, ssh.PublicKey) error {
 }
 
 func forward(localAddr, remoteAddr net.Conn) chan error {
-	errch := make(chan error, 1)
+	errch := make(chan error, 0)
 	ch1 := make(chan error, 0)
 	ch2 := make(chan error, 0)
 	go func() {
@@ -165,7 +165,6 @@ func main() {
 	defer listen.Close()
 	for {
 		localAccept, err := listen.Accept()
-		log.Println("Accept!!!")
 		if err != nil {
 			log.Fatalf("Accept ERROR: %v", err)
 		}
