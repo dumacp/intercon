@@ -167,7 +167,9 @@ func main() {
 		log.Printf("Accept connection from: %v", localAccept)
 		errch := forward(localAccept, remote)
 		for err := range errch {
-			log.Fatalf("forward ERROR: %v", err)
+			if err != nil {
+				log.Fatalf("forward ERROR: %v", err)
+			}
 		}
 		log.Println("Done!!!")
 		localAccept.Close()
