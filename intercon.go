@@ -59,22 +59,42 @@ func callHostKey(keyLoad []byte) func(string, net.Addr, ssh.PublicKey) error {
 }
 
 func forward(localAddr, remoteAddr net.Conn) chan error {
-	errch := make(chan error, 0)
+	errch := make(chan error, 1)
+	ch1 := make(chan error, 0)
+	ch2 := make(chan error, 0)
 	go func() {
+		defer close(ch1)
 		if _, err := io.Copy(localAddr, remoteAddr); err != nil {
-			errch <- fmt.Errorf("Error in io.copy: %v", err)
+			ch1 <- fmt.Errorf("Error in io.copy: %v", err)
 		} else {
-			errch <- nil
+			ch1 <- nil
 		}
 		log.Println("exit ioCopy local -> remote")
 	}()
 	go func() {
+		defer close(ch2)
 		if _, err := io.Copy(remoteAddr, localAddr); err != nil {
-			errch <- fmt.Errorf("Error in io.copy: %v", err)
+			ch2 <- fmt.Errorf("Error in io.copy: %v", err)
 		} else {
-			errch <- nil
+			ch2 <- nil
 		}
 		log.Println("exit ioCopy remote -> local")
+	}()
+
+	go func() {
+		defer close(errch)
+		for {
+			select {
+			case v := <-ch1:
+				errch <- v
+				continue
+			case v := <-ch2:
+				errch <- v
+				continue
+			}
+			break
+		}
+
 	}()
 	return errch
 }
@@ -146,7 +166,7 @@ func main() {
 		}
 		log.Printf("Accept connection from: %v", localAccept)
 		errch := forward(localAccept, remote)
-		if err := <-errch; err != nil {
+		for err := range errch {
 			log.Fatalf("forward ERROR: %v", err)
 		}
 		log.Println("Done!!!")
