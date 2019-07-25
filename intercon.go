@@ -63,14 +63,18 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 	go func() {
 		if _, err := io.Copy(localAddr, remoteAddr); err != nil {
 			errch <- fmt.Errorf("Error in io.copy: %v", err)
+		} else {
+			errch <- nil
 		}
-		errch <- nil
+		log.Println("exit ioCopy local -> remote")
 	}()
 	go func() {
 		if _, err := io.Copy(remoteAddr, localAddr); err != nil {
 			errch <- fmt.Errorf("Error in io.copy: %v", err)
+		} else {
+			errch <- nil
 		}
-		errch <- nil
+		log.Println("exit ioCopy remote -> local")
 	}()
 	return errch
 }
