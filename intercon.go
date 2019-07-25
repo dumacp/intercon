@@ -140,6 +140,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Accept ERROR: %v", err)
 		}
+		log.Printf("Accept connection from: %v", localAccept)
 		errch := forward(localAccept, remote)
 		if err := <-errch; err != nil {
 			log.Fatalf("forward ERROR: %v", err)
