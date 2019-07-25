@@ -83,14 +83,22 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 		select {
 		case v := <-ch1:
 			log.Println("select 1 !!!")
-			errch <- v
+			select {
+			case errch <- v:
+			default:
+				log.Printf("select 1 :%v!!!", v)
+			}
 		}
 	}()
 	go func() {
 		select {
 		case v := <-ch2:
 			log.Println("select 2 !!!")
-			errch <- v
+			select {
+			case errch <- v:
+			default:
+				log.Printf("select 2 :%v!!!", v)
+			}
 		}
 	}()
 	return errch
@@ -165,8 +173,6 @@ func main() {
 		errch := forward(localAccept, remote)
 		if err := <-errch; err != nil {
 			log.Printf("forward ERROR: %v", err)
-			localAccept.Close()
-			remote.Close()
 		}
 		log.Println("Done!!!")
 	}
