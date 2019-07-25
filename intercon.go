@@ -67,38 +67,31 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 		if _, err := io.Copy(localAddr, remoteAddr); err != nil {
 			ch1 <- fmt.Errorf("Error in io.copy: %v", err)
 		} else {
-			ch1 <- nil
+			ch1 <- fmt.Errorf("exit ioCopy local -> remote")
 		}
-		log.Println("exit ioCopy local -> remote")
 	}()
 	go func() {
 		defer close(ch2)
 		if _, err := io.Copy(remoteAddr, localAddr); err != nil {
 			ch2 <- fmt.Errorf("Error in io.copy: %v", err)
 		} else {
-			ch2 <- nil
+			ch2 <- fmt.Errorf("exit ioCopy remote -> local")
 		}
-		log.Println("exit ioCopy remote -> local")
 	}()
 
 	go func() {
-		defer close(errch)
-		for {
-			log.Println("select!!!")
-			select {
-			case v := <-ch1:
-				log.Println("select 1 !!!")
-				errch <- v
-				continue
-			case v := <-ch2:
-				log.Println("select 2 !!!")
-				errch <- v
-				continue
-			}
-			break
+		select {
+		case v := <-ch1:
+			log.Println("select 1 !!!")
+			errch <- v
 		}
-		log.Println("select out!!!")
-
+	}()
+	go func() {
+		select {
+		case v := <-ch2:
+			log.Println("select 2 !!!")
+			errch <- v
+		}
 	}()
 	return errch
 }
@@ -170,10 +163,8 @@ func main() {
 		}
 		log.Printf("Accept connection from: %v", localAccept)
 		errch := forward(localAccept, remote)
-		for err := range errch {
-			if err != nil {
-				log.Fatalf("forward ERROR: %v", err)
-			}
+		if err := <-errch; err != nil {
+			log.Printf("forward ERROR: %v", err)
 			localAccept.Close()
 		}
 		log.Println("Done!!!")
