@@ -84,6 +84,7 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 	go func() {
 		defer close(errch)
 		for {
+			log.Println("select!!!")
 			select {
 			case v := <-ch1:
 				errch <- v
@@ -94,6 +95,7 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 			}
 			break
 		}
+		log.Println("select out!!!")
 
 	}()
 	return errch
