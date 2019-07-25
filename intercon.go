@@ -87,9 +87,11 @@ func forward(localAddr, remoteAddr net.Conn) chan error {
 			log.Println("select!!!")
 			select {
 			case v := <-ch1:
+				log.Println("select 1 !!!")
 				errch <- v
 				continue
 			case v := <-ch2:
+				log.Println("select 2 !!!")
 				errch <- v
 				continue
 			}
