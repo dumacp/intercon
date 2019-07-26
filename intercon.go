@@ -178,6 +178,7 @@ func main() {
 	}
 	defer listen.Close()
 	for {
+		log.Println("Waiting .... Accept")
 		localAccept, err := listen.Accept()
 		if err != nil {
 			log.Printf("listen in local Addr ERROR: %v", err)
