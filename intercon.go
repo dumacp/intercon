@@ -58,50 +58,80 @@ func callHostKey(keyLoad []byte) func(string, net.Addr, ssh.PublicKey) error {
 	}
 }
 
-func forward(localAddr, remoteAddr net.Conn) chan error {
-	errch := make(chan error, 0)
+func forward(client *ssh.Client, localAddr, remoteAddr string, errch chan error) {
+	defer close(errch)
+
+	listen, err := net.Listen("tcp", localAddr)
+	if err != nil {
+		errch <- fmt.Errorf("listen in local Addr ERROR: %v", err)
+		return
+	}
+	defer listen.Close()
+
+	localAccept, err := listen.Accept()
+	if err != nil {
+		errch <- fmt.Errorf("Accept ERROR: %v", err)
+		return
+	}
+
+	remote, err := client.Dial("tcp", remoteAddr)
+	if err != nil {
+		errch <- fmt.Errorf("connect to remote Addr ERROR: %v", err)
+		return
+	}
+	defer remote.Close()
+
 	ch1 := make(chan error, 0)
 	ch2 := make(chan error, 0)
 	go func() {
 		defer close(ch1)
-		if _, err := io.Copy(localAddr, remoteAddr); err != nil {
-			ch1 <- fmt.Errorf("Error in io.copy: %v", err)
+		if _, err := io.Copy(localAccept, remote); err != nil {
+			select {
+			case ch1 <- fmt.Errorf("Error in io.copy: %v", err):
+			default:
+				log.Printf("Error in io.copy: %v", err)
+			}
 		} else {
-			ch1 <- fmt.Errorf("exit ioCopy local -> remote")
+			select {
+			case ch1 <- fmt.Errorf("exit ioCopy local -> remote"):
+			default:
+				log.Printf("Error in io.copy: %v", err)
+			}
 		}
 	}()
 	go func() {
 		defer close(ch2)
-		if _, err := io.Copy(remoteAddr, localAddr); err != nil {
-			ch2 <- fmt.Errorf("Error in io.copy: %v", err)
+		if _, err := io.Copy(remote, localAccept); err != nil {
+			select {
+			case ch2 <- fmt.Errorf("Error in io.copy: %v", err):
+			default:
+				log.Printf("Error in io.copy: %v", err)
+			}
 		} else {
-			ch2 <- fmt.Errorf("exit ioCopy remote -> local")
+			select {
+			case ch2 <- fmt.Errorf("exit ioCopy remote -> local"):
+			default:
+				log.Printf("Error in io.copy: %v", err)
+			}
 		}
 	}()
 
-	go func() {
+	select {
+	case v := <-ch1:
+		log.Println("select 1 !!!")
 		select {
-		case v := <-ch1:
-			log.Println("select 1 !!!")
-			select {
-			case errch <- v:
-			default:
-				log.Printf("select 1 :%v!!!", v)
-			}
+		case errch <- v:
+		default:
+			log.Printf("select 1 :%v!!!", v)
 		}
-	}()
-	go func() {
+	case v := <-ch2:
+		log.Println("select 2 !!!")
 		select {
-		case v := <-ch2:
-			log.Println("select 2 !!!")
-			select {
-			case errch <- v:
-			default:
-				log.Printf("select 2 :%v!!!", v)
-			}
+		case errch <- v:
+		default:
+			log.Printf("select 2 :%v!!!", v)
 		}
-	}()
-	return errch
+	}
 }
 
 var remoteAddr string
@@ -153,25 +183,10 @@ func main() {
 	}
 	defer client.Close()
 
-	remote, err := client.Dial("tcp", remoteAddr)
-	if err != nil {
-		log.Fatalf("connect to remote Addr ERROR: %v", err)
-	}
-	defer remote.Close()
-
-	listen, err := net.Listen("tcp", localAddr)
-	if err != nil {
-		log.Fatalf("listen in local Addr ERROR: %v", err)
-	}
-	defer listen.Close()
 	for {
-		localAccept, err := listen.Accept()
-		if err != nil {
-			log.Fatalf("Accept ERROR: %v", err)
-		}
-		log.Printf("Accept connection from: %v", localAccept)
-		errch := forward(localAccept, remote)
-		if err := <-errch; err != nil {
+		errch := make(chan error, 0)
+		go forward(client, localAddr, remoteAddr, errch)
+		for err := range errch {
 			log.Printf("forward ERROR: %v", err)
 		}
 		log.Println("Done!!!")
