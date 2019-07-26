@@ -17,6 +17,7 @@ func importKey(keyfile string) (ssh.Signer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to read private key: %v", err)
 	}
+	log.Printf("READ KEY:\n%s", key)
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse private key: %v", err)
@@ -155,7 +156,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("import key ERROR: %v", err)
 		}
-		log.Println("IMPORT KEY")
+		log.Printf("IMPORT KEY:\n%v", pKey)
 		config.Auth = append(config.Auth, ssh.PublicKeys(pKey))
 	}
 
