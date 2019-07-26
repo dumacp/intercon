@@ -58,21 +58,10 @@ func callHostKey(keyLoad []byte) func(string, net.Addr, ssh.PublicKey) error {
 	}
 }
 
-func forward(client *ssh.Client, localAddr, remoteAddr string, errch chan error) {
+func forward(client *ssh.Client, localAccept net.Conn, remoteAddr string, errch chan error) {
 	defer close(errch)
 
-	listen, err := net.Listen("tcp", localAddr)
-	if err != nil {
-		errch <- fmt.Errorf("listen in local Addr ERROR: %v", err)
-		return
-	}
-	defer listen.Close()
-
-	localAccept, err := listen.Accept()
-	if err != nil {
-		errch <- fmt.Errorf("Accept ERROR: %v", err)
-		return
-	}
+	defer localAccept.Close()
 
 	remote, err := client.Dial("tcp", remoteAddr)
 	if err != nil {
@@ -183,12 +172,24 @@ func main() {
 	}
 	defer client.Close()
 
+	listen, err := net.Listen("tcp", localAddr)
+	if err != nil {
+		log.Fatalf("listen in local Addr ERROR: %v", err)
+	}
+	defer listen.Close()
 	for {
-		errch := make(chan error, 0)
-		go forward(client, localAddr, remoteAddr, errch)
-		for err := range errch {
-			log.Printf("forward ERROR: %v", err)
+		localAccept, err := listen.Accept()
+		if err != nil {
+			log.Printf("listen in local Addr ERROR: %v", err)
+			continue
 		}
-		log.Println("Done!!!")
+		go func() {
+			errch := make(chan error, 0)
+			go forward(client, localAccept, remoteAddr, errch)
+			for err := range errch {
+				log.Printf("forward ERROR: %v", err)
+			}
+			log.Println("Done!!!")
+		}()
 	}
 }
