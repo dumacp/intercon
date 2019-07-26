@@ -84,7 +84,7 @@ func forward(client *ssh.Client, localAccept net.Conn, remoteAddr string, errch 
 			select {
 			case ch1 <- fmt.Errorf("exit ioCopy local -> remote"):
 			default:
-				log.Printf("Error in io.copy: %v", err)
+				log.Println("exit ioCopy local -> remote")
 			}
 		}
 	}()
@@ -100,7 +100,7 @@ func forward(client *ssh.Client, localAccept net.Conn, remoteAddr string, errch 
 			select {
 			case ch2 <- fmt.Errorf("exit ioCopy remote -> local"):
 			default:
-				log.Printf("Error in io.copy: %v", err)
+				log.Println("exit ioCopy remote -> local")
 			}
 		}
 	}()
