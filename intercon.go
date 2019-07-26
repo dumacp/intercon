@@ -128,7 +128,7 @@ var serverAddr string
 var localAddr string
 var remoteUser string
 var hostKey string
-var pubKey string
+var privateKey string
 var password string
 
 func init() {
@@ -137,7 +137,7 @@ func init() {
 	flag.StringVar(&remoteUser, "remoteUser", "user", "remote user")
 	flag.StringVar(&localAddr, "localAddr", "svc.local:8080", "local socket Address")
 	flag.StringVar(&hostKey, "hostKey", "", "HostKey in remote Server")
-	flag.StringVar(&pubKey, "pubKey", "", "pubKey to authentication")
+	flag.StringVar(&privateKey, "privateKey", "", "privateKey to authentication")
 	flag.StringVar(&password, "password", "", "password to authentication")
 }
 func main() {
@@ -149,9 +149,9 @@ func main() {
 	config.Auth = make([]ssh.AuthMethod, 0)
 
 	var pKey ssh.Signer = nil
-	if len(pubKey) > 0 {
+	if len(privateKey) > 0 {
 		var err error
-		pKey, err = importKey(pubKey)
+		pKey, err = importKey(privateKey)
 		if err != nil {
 			log.Fatalf("import key ERROR: %v", err)
 		}
